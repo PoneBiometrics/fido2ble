@@ -15,6 +15,9 @@ Vcs-Browser: https://github.com/PoneBiometrics/fido2ble
 Vcs-Git: https://github.com/PoneBiometrics/fido2ble.git
 
 Package: fido2ble
+Provides: fido2ble-to-uhid
+Breaks: fido2ble-to-uhid
+Replaces: fido2ble-to-uhid
 Architecture: all
 Multi-Arch: foreign
 Depends:
@@ -40,3 +43,12 @@ Description: Proxy FIDO2 BLE Devices to UHID so they can be used in
 #  <Insert long description, indented with spaces.>
 #  .
 # This is the common documentation package.
+
+
+Package: fido2ble-to-uhid
+Depends: fido2ble, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ This is a transitional package. It can safely be removed.

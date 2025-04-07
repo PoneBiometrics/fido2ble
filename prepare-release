@@ -9,11 +9,12 @@ rm -rf release-files
 mkdir -p release-files
 
 cp ../fido2ble_${VERSION}_all.deb release-files/
+cp ../fido2ble-to-uhid_${VERSION}_all.deb release-files/
 cp ../fido2ble_${VERSION}.dsc release-files/
 cp ../fido2ble_${VERSION}.tar.xz release-files/
 
 cd release-files
-dpkg-scanpackages . /dev/null > Packages
+dpkg-scanpackages . <(echo -e "fido2ble optional misc\nfido2ble-to-uhid optional oldlibs") > Packages
 gzip --keep --force -9 Packages
 xz --keep --force -9 Packages
 

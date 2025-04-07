@@ -7,10 +7,10 @@ name = "fido2ble"
 authors = [
   {name= "Jó Ágila Bitsch", email = "jo.bitsch@gmail.com"},
   {name= "Sigurhjörtur Snorrason", email = "sis@ponebiometrics.com"},
-  {name= "Magnus Ringerud", email = "mar@ponebiometrics.com>ponebiometrics.com"},
+  {name= "Magnus Ringerud", email = "mar@ponebiometrics.com"},
   {name= "Kacper Wysocki", email = "kacper@delta9.pl"},
 ]
-version = "0.0.1"
+version = "0.2"
 license = {text="MIT"}
 
 [project.scripts]

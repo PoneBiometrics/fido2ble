@@ -1,3 +1,14 @@
+fido2ble (0.2) UNRELEASED; urgency=medium
+
+  * Added support for pairing while running
+  * Added logging arguments for general log level and uhid log level
+  * Improved disconnect and reconnect handling
+  * Switched to adaptive characteristic paths
+  * Added bluetooth address to hidraw device name
+
+ -- Jó Ágila Bitsch <jo.bitsch@gmail.com>  Mon, 7 Apr 2025 08:39:12 +0200
+
+
 fido2ble (0.1) UNRELEASED; urgency=medium
 
   * Initial release.

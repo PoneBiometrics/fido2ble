@@ -1,5 +1,7 @@
 /python3-fido2ble-to-uhid
 /fido2ble-to-uhid
+/python3-fido2ble
+/fido2ble
 /debhelper-build-stamp
 /files
 /*.debhelper
