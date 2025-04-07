@@ -4,7 +4,7 @@ fido2ble (0.2) UNRELEASED; urgency=medium
   * Added logging arguments for general log level and uhid log level
   * Improved disconnect and reconnect handling
   * Switched to adaptive characteristic paths
-  * Add bluetooth address to hidraw device name
+  * Added bluetooth address to hidraw device name
 
  -- Jó Ágila Bitsch <jo.bitsch@gmail.com>  Mon, 7 Apr 2025 08:39:12 +0200
 
