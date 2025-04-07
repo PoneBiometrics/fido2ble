@@ -6,6 +6,7 @@
 
 export PYBUILD_NAME=fido2ble
 export PYBUILD_OPTION=-p 3.8 -p 3.9 -p 3.10 -p 3.11 -p 3.12
+export PYBUILD_DESTDIR=debian/fido2ble/
 
 %:
 	dh $@ --buildsystem=pybuild
