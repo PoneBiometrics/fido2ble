@@ -16,8 +16,8 @@ Vcs-Git: https://github.com/PoneBiometrics/fido2ble.git
 
 Package: fido2ble
 Provides: fido2ble-to-uhid
-Breaks: fido2ble-to-uhid
-Replaces: fido2ble-to-uhid
+Breaks: fido2ble-to-uhid (<< 0.2)
+Replaces: fido2ble-to-uhid (<< 0.2)
 Architecture: all
 Multi-Arch: foreign
 Depends:
