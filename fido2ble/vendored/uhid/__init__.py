@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
     import trio  # pragma: no cover
 
 
-__version__ = '0.0.1'
+__version__ = "0.0.1"
 
 
 _HID_MAX_DESCRIPTOR_SIZE = 4096
@@ -79,118 +79,118 @@ class _ReportType(enum.Enum):
 class _Create2Req(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('name', ctypes.c_char * 128),
-        ('phys', ctypes.c_char * 64),
-        ('uniq', ctypes.c_char * 64),
-        ('rd_size', ctypes.c_uint16),
-        ('bus', ctypes.c_uint16),
-        ('vendor', ctypes.c_uint32),
-        ('product', ctypes.c_uint32),
-        ('version', ctypes.c_uint32),
-        ('country', ctypes.c_uint32),
-        ('rd_data', ctypes.c_uint8 * _HID_MAX_DESCRIPTOR_SIZE),
+        ("name", ctypes.c_char * 128),
+        ("phys", ctypes.c_char * 64),
+        ("uniq", ctypes.c_char * 64),
+        ("rd_size", ctypes.c_uint16),
+        ("bus", ctypes.c_uint16),
+        ("vendor", ctypes.c_uint32),
+        ("product", ctypes.c_uint32),
+        ("version", ctypes.c_uint32),
+        ("country", ctypes.c_uint32),
+        ("rd_data", ctypes.c_uint8 * _HID_MAX_DESCRIPTOR_SIZE),
     ]
 
 
 class _StartReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('dev_flags', ctypes.c_uint64),
+        ("dev_flags", ctypes.c_uint64),
     ]
 
 
 class _Input2Req(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('size', ctypes.c_uint16),
-        ('data', ctypes.c_uint8 * _UHID_DATA_MAX),
+        ("size", ctypes.c_uint16),
+        ("data", ctypes.c_uint8 * _UHID_DATA_MAX),
     ]
 
 
 class _OutputReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('data', ctypes.c_uint8 * _UHID_DATA_MAX),
-        ('size', ctypes.c_uint16),
-        ('rtype', ctypes.c_uint8),
+        ("data", ctypes.c_uint8 * _UHID_DATA_MAX),
+        ("size", ctypes.c_uint16),
+        ("rtype", ctypes.c_uint8),
     ]
 
 
 class _GetReportReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('id', ctypes.c_uint32),
-        ('rnum', ctypes.c_uint8),
-        ('rtype', ctypes.c_uint8),
+        ("id", ctypes.c_uint32),
+        ("rnum", ctypes.c_uint8),
+        ("rtype", ctypes.c_uint8),
     ]
 
 
 class _GetReportReplyReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('id', ctypes.c_uint32),
-        ('err', ctypes.c_uint16),
-        ('size', ctypes.c_uint16),
-        ('data', ctypes.c_uint8 * _UHID_DATA_MAX),
+        ("id", ctypes.c_uint32),
+        ("err", ctypes.c_uint16),
+        ("size", ctypes.c_uint16),
+        ("data", ctypes.c_uint8 * _UHID_DATA_MAX),
     ]
 
 
 class _SetReportReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('id', ctypes.c_uint64),
-        ('rnum', ctypes.c_uint8),
-        ('rtype', ctypes.c_uint8),
-        ('size', ctypes.c_uint16),
-        ('data', ctypes.c_uint8 * _UHID_DATA_MAX),
+        ("id", ctypes.c_uint64),
+        ("rnum", ctypes.c_uint8),
+        ("rtype", ctypes.c_uint8),
+        ("size", ctypes.c_uint16),
+        ("data", ctypes.c_uint8 * _UHID_DATA_MAX),
     ]
 
 
 class _SetReportReplyReq(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('id', ctypes.c_uint32),
-        ('err', ctypes.c_uint16),
+        ("id", ctypes.c_uint32),
+        ("err", ctypes.c_uint16),
     ]
 
 
 class _U(ctypes.Union):
     _fields_ = [
-        ('output', _OutputReq),
-        ('get_report', _GetReportReq),
-        ('get_report_reply', _GetReportReplyReq),
-        ('create2', _Create2Req),
-        ('input2', _Input2Req),
-        ('set_report', _SetReportReq),
-        ('set_report_reply', _SetReportReplyReq),
-        ('start', _StartReq),
+        ("output", _OutputReq),
+        ("get_report", _GetReportReq),
+        ("get_report_reply", _GetReportReplyReq),
+        ("create2", _Create2Req),
+        ("input2", _Input2Req),
+        ("set_report", _SetReportReq),
+        ("set_report_reply", _SetReportReplyReq),
+        ("start", _StartReq),
     ]
 
 
 class _Event(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('type', ctypes.c_uint32),
-        ('u', _U),
+        ("type", ctypes.c_uint32),
+        ("u", _U),
     ]
 
 
 class UHIDException(Exception):
-    '''
+    """
     Exception triggered when interfacing with UHID
-    '''
+    """
 
 
 class _UHIDBase(object):
-    '''
+    """
     UHID interface implementation base
 
     Does not do IO, only constructs the events.
-    '''
+    """
 
     def __init__(self) -> None:
-        if not os.path.exists('/dev/uhid'):  # pragma: no cover
-            raise RuntimeError('UHID is not available (/dev/uhid is missing)')
+        if not os.path.exists("/dev/uhid"):  # pragma: no cover
+            raise RuntimeError("UHID is not available (/dev/uhid is missing)")
 
         self.__logger = logging.getLogger(self.__class__.__name__)
         self._created = False
@@ -205,33 +205,41 @@ class _UHIDBase(object):
         self.receive_start: Optional[Callable[[int], None]] = None
         self.receive_open: Optional[Callable[[], None]] = None
         self.receive_close: Optional[Callable[[], None]] = None
-        self.receive_output: Optional[Callable[[List[int], _ReportType], Optional[Awaitable[None]]]] = None
+        self.receive_output: Optional[
+            Callable[[List[int], _ReportType], Optional[Awaitable[None]]]
+        ] = None
 
-    def _receive_dispatch(self, buffer: bytes) -> Optional[Callable[[], Optional[Awaitable[None]]]]:
-        event_type = struct.unpack_from('< L', buffer)[0]
+    def _receive_dispatch(
+        self, buffer: bytes
+    ) -> Optional[Callable[[], Optional[Awaitable[None]]]]:
+        event_type = struct.unpack_from("< L", buffer)[0]
 
         if event_type == _EventType.UHID_START.value:
-            _, dev_flags = struct.unpack_from('< L Q', buffer)
-            self.__logger.debug('device started')
+            _, dev_flags = struct.unpack_from("< L Q", buffer)
+            self.__logger.debug("device started")
             self._started = True
             if self.receive_start:
                 return functools.partial(self.receive_start, dev_flags)
 
         elif event_type == _EventType.UHID_OPEN.value:
             self._open_count += 1
-            self.__logger.debug(f'device was opened (it now has {self._open_count} open instances)')
+            self.__logger.debug(
+                f"device was opened (it now has {self._open_count} open instances)"
+            )
             if self.receive_open:
                 return functools.partial(self.receive_open)
 
         elif event_type == _EventType.UHID_CLOSE.value:
             self._open_count -= 1
-            self.__logger.debug(f'device was closed (it now has {self._open_count} open instances)')
+            self.__logger.debug(
+                f"device was closed (it now has {self._open_count} open instances)"
+            )
             if self.receive_close:
                 return functools.partial(self.receive_close)
 
         elif event_type == _EventType.UHID_OUTPUT.value:
             if self.receive_output:
-                _, data, size, rtype = struct.unpack_from('< L 4096s H B', buffer)
+                _, data, size, rtype = struct.unpack_from("< L 4096s H B", buffer)
                 return functools.partial(
                     self.receive_output,
                     list(data)[:size],
@@ -253,23 +261,33 @@ class _UHIDBase(object):
         rd_data: Sequence[int],
     ) -> bytes:
         if self._created:
-            raise UHIDException('This instance already has a device open, it is only possible to open 1 device per instance')
+            raise UHIDException(
+                "This instance already has a device open, it is only possible to open 1 device per instance"
+            )
         self._created = True
 
         if len(name) > _Create2Req.name.size:
-            raise UHIDException(f'UHID_CREATE2: name is too big ({len(name) > _Create2Req.name.size})')
+            raise UHIDException(
+                f"UHID_CREATE2: name is too big ({len(name) > _Create2Req.name.size})"
+            )
 
         if len(phys) > _Create2Req.phys.size:
-            raise UHIDException(f'UHID_CREATE2: phys is too big ({len(phys) > _Create2Req.phys.size})')
+            raise UHIDException(
+                f"UHID_CREATE2: phys is too big ({len(phys) > _Create2Req.phys.size})"
+            )
 
         if len(uniq) > _Create2Req.uniq.size:
-            raise UHIDException(f'UHID_CREATE2: uniq is too big ({len(uniq) > _Create2Req.uniq.size})')
+            raise UHIDException(
+                f"UHID_CREATE2: uniq is too big ({len(uniq) > _Create2Req.uniq.size})"
+            )
 
         if len(rd_data) > _Create2Req.rd_data.size:
-            raise UHIDException(f'UHID_CREATE2: rd_data is too big ({len(rd_data) > _Create2Req.rd_data.size})')
+            raise UHIDException(
+                f"UHID_CREATE2: rd_data is too big ({len(rd_data) > _Create2Req.rd_data.size})"
+            )
 
         return struct.pack(
-            '< L 128s 64s 64s H H L L L L 4096s',
+            "< L 128s 64s 64s H H L L L L 4096s",
             _EventType.UHID_CREATE2.value,
             name.encode(),
             phys.encode(),
@@ -285,14 +303,16 @@ class _UHIDBase(object):
 
     def _destroy_event(self) -> bytes:
         self._created = False
-        return struct.pack('< L', _EventType.UHID_DESTROY.value)
+        return struct.pack("< L", _EventType.UHID_DESTROY.value)
 
     def _input2_event(self, data: Sequence[int]) -> bytes:
         if len(data) > _Input2Req.data.size:
-            raise UHIDException(f'UHID_INPUT2: data is too big ({len(data) > _Input2Req.data.size})')
+            raise UHIDException(
+                f"UHID_INPUT2: data is too big ({len(data) > _Input2Req.data.size})"
+            )
 
         return struct.pack(
-            '< L H 4096s',
+            "< L H 4096s",
             _EventType.UHID_INPUT2.value,
             len(data),
             bytes(data),
@@ -306,26 +326,28 @@ class _UHIDBase(object):
 
 
 class _BlockingUHIDBase(_UHIDBase):
-    '''
+    """
     Base for blocking IO based UHID interface implementation
-    '''
+    """
 
     def __init__(self) -> None:
         super().__init__()
         self.__logger = logging.getLogger(self.__class__.__name__)
 
-        self._uhid = os.open('/dev/uhid', os.O_RDWR)
+        self._uhid = os.open("/dev/uhid", os.O_RDWR)
 
     def _write(self, event: bytes) -> None:
         n = os.write(self._uhid, bytearray(event))
         if n != len(event):  # pragma: no cover
-            raise UHIDException(f'Failed to send data ({n} != {len(event)})')
+            raise UHIDException(f"Failed to send data ({n} != {len(event)})")
 
     def _read(self) -> None:
         callback = self._receive_dispatch(os.read(self._uhid, ctypes.sizeof(_Event)))
         if callback:
             if inspect.iscoroutinefunction(callback):
-                raise TypeError(f'{self.__class__.__name__} does not support async callbacks (got {callback})')
+                raise TypeError(
+                    f"{self.__class__.__name__} does not support async callbacks (got {callback})"
+                )
             callback()
 
     def _send_event(self, event: bytes) -> None:
@@ -336,9 +358,9 @@ class _BlockingUHIDBase(_UHIDBase):
 
 
 class PolledBlockingUHID(_BlockingUHIDBase):
-    '''
+    """
     Blocking IO UHID implementation using epoll
-    '''
+    """
 
     def single_dispatch(self) -> None:
         self._read()
@@ -352,12 +374,12 @@ class PolledBlockingUHID(_BlockingUHIDBase):
 
 
 class AsyncioBlockingUHID(_BlockingUHIDBase):
-    '''
+    """
     Blocking IO UHID implementation using AsyncIO readers and writers
 
     AsyncIO will watch the UHID file descriptor and schedule read and write
     tasks when it is ready for those operations.
-    '''
+    """
 
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
         super().__init__()
@@ -385,9 +407,9 @@ class AsyncioBlockingUHID(_BlockingUHIDBase):
 
 
 class TrioUHID(_UHIDBase):
-    '''
+    """
     Trio UHID implementation
-    '''
+    """
 
     def __init__(self, file: trio._AsyncRawIOBase) -> None:
         super().__init__()
@@ -396,12 +418,12 @@ class TrioUHID(_UHIDBase):
 
     @classmethod
     async def new(cls) -> TrioUHID:
-        '''
+        """
         Async initializer
-        '''
+        """
         import trio
 
-        return cls(await trio.open_file('/dev/uhid', 'rb+', buffering=0))
+        return cls(await trio.open_file("/dev/uhid", "rb+", buffering=0))
 
     async def _write(self, event: bytes) -> None:
         await self._uhid.write(event)
@@ -419,7 +441,9 @@ class TrioUHID(_UHIDBase):
         while True:
             await self.single_dispatch()
 
-    async def send_event(self, event_type: _EventType, *args: Any, **kwargs: Any) -> None:
+    async def send_event(
+        self, event_type: _EventType, *args: Any, **kwargs: Any
+    ) -> None:
         await self._write(self._construct_event[event_type](*args, **kwargs))
 
 
@@ -438,10 +462,10 @@ class _UHIDDeviceBase(object):
         country: int = 0,
     ) -> None:
         if not unique_name:
-            unique_name = f'{self.__class__.__name__}_{uuid.uuid4()}'[:63]
+            unique_name = f"{self.__class__.__name__}_{uuid.uuid4()}"[:63]
 
         if not physical_name:
-            physical_name = f'{self.__class__.__name__}/{unique_name}'[:63]
+            physical_name = f"{self.__class__.__name__}/{unique_name}"[:63]
 
         self._bus = bus
         self._vid = vid
@@ -458,7 +482,7 @@ class _UHIDDeviceBase(object):
         self._backend = uhid_backend
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(vid={self.vid}, pid={self.pid}, name={self.name}, uniq={self.unique_name})'
+        return f"{self.__class__.__name__}(vid={self.vid}, pid={self.pid}, name={self.name}, uniq={self.unique_name})"
 
     @property
     def bus(self) -> Bus:
@@ -526,18 +550,25 @@ class _UHIDDeviceBase(object):
         self._backend.receive_close = callback
 
     @property
-    def receive_output(self) -> Optional[Callable[[List[int], _ReportType], Optional[Awaitable[None]]]]:
+    def receive_output(
+        self,
+    ) -> Optional[Callable[[List[int], _ReportType], Optional[Awaitable[None]]]]:
         return self._backend.receive_output
 
     @receive_output.setter
-    def receive_output(self, callback: Optional[Callable[[List[int], _ReportType], Optional[Awaitable[None]]]]) -> None:
+    def receive_output(
+        self,
+        callback: Optional[
+            Callable[[List[int], _ReportType], Optional[Awaitable[None]]]
+        ],
+    ) -> None:
         self._backend.receive_output = callback
 
 
 class UHIDDevice(_UHIDDeviceBase):
-    '''
+    """
     UHID device
-    '''
+    """
 
     def __init__(
         self,
@@ -551,27 +582,40 @@ class UHIDDevice(_UHIDDeviceBase):
         unique_name: Optional[str] = None,
         version: int = 0,
         country: int = 0,
-        backend: Type[Union[PolledBlockingUHID, AsyncioBlockingUHID]] = PolledBlockingUHID,
+        backend: Type[
+            Union[PolledBlockingUHID, AsyncioBlockingUHID]
+        ] = PolledBlockingUHID,
     ) -> None:
         uhid = backend()
-        super().__init__(uhid, vid, pid, name, report_descriptor, bus, physical_name, unique_name, version, country)
+        super().__init__(
+            uhid,
+            vid,
+            pid,
+            name,
+            report_descriptor,
+            bus,
+            physical_name,
+            unique_name,
+            version,
+            country,
+        )
         self.__logger = logging.getLogger(self.__class__.__name__)
 
         self._uhid = uhid
         self.initialize()
 
     def initialize(self) -> None:
-        '''
+        """
         Initializes the device
 
         Subclasses can overwrite this method. There are several use cases for that,
         eg. delay initialization, custom initialization, etc.
-        '''
-        self.__logger.info('initializing device')
+        """
+        self.__logger.info("initializing device")
         self._create()
 
     def _create(self) -> None:
-        self.__logger.info(f'(UHID_CREATE2) create {self}')
+        self.__logger.info(f"(UHID_CREATE2) create {self}")
         self._uhid.send_event(
             _EventType.UHID_CREATE2,
             self._name,
@@ -604,21 +648,23 @@ class UHIDDevice(_UHIDDeviceBase):
             self._uhid.single_dispatch()
 
     def destroy(self) -> None:
-        self.__logger.info(f'(UHID_DESTROY) destroy {self}')
+        self.__logger.info(f"(UHID_DESTROY) destroy {self}")
         self._uhid.send_event(_EventType.UHID_DESTROY)
 
     def send_input(self, data: Sequence[int]) -> None:
         if self.__logger.level <= logging.INFO:
-            self.__logger.info('(UHID_INPUT2) send {}'.format(
-                ''.join([f'{byte:02x}' for byte in data])
-            ))
+            self.__logger.info(
+                "(UHID_INPUT2) send {}".format(
+                    "".join([f"{byte:02x}" for byte in data])
+                )
+            )
         self._uhid.send_event(_EventType.UHID_INPUT2, data)
 
 
 class AsyncUHIDDevice(_UHIDDeviceBase):
-    '''
+    """
     UHID device with an async API
-    '''
+    """
 
     def __init__(
         self,
@@ -633,7 +679,18 @@ class AsyncUHIDDevice(_UHIDDeviceBase):
         version: int = 0,
         country: int = 0,
     ) -> None:
-        super().__init__(backend, vid, pid, name, report_descriptor, bus, physical_name, unique_name, version, country)
+        super().__init__(
+            backend,
+            vid,
+            pid,
+            name,
+            report_descriptor,
+            bus,
+            physical_name,
+            unique_name,
+            version,
+            country,
+        )
         self.__logger = logging.getLogger(self.__class__.__name__)
         self._uhid = backend
 
@@ -652,18 +709,29 @@ class AsyncUHIDDevice(_UHIDDeviceBase):
         country: int = 0,
         backend: Type[TrioUHID],
     ) -> AsyncUHIDDevice:
-        device = cls(await backend.new(), vid, pid, name, report_descriptor, bus, physical_name, unique_name, version, country)
+        device = cls(
+            await backend.new(),
+            vid,
+            pid,
+            name,
+            report_descriptor,
+            bus,
+            physical_name,
+            unique_name,
+            version,
+            country,
+        )
         await device.initialize()
         return device
 
     async def initialize(self) -> None:
-        '''
+        """
         Initializes the device
 
         Subclasses can overwrite this method. There are several use cases for that,
         eg. delay initialization, custom initialization, etc.
-        '''
-        self.__logger.info('initializing device')
+        """
+        self.__logger.info("initializing device")
         await self._create()
 
     async def wait_for_start(self, delay: float = 0.05) -> None:
@@ -677,7 +745,7 @@ class AsyncUHIDDevice(_UHIDDeviceBase):
         await self._uhid.single_dispatch()
 
     async def _create(self) -> None:
-        self.__logger.info(f'(UHID_CREATE2) create {self}')
+        self.__logger.info(f"(UHID_CREATE2) create {self}")
         await self._uhid.send_event(
             _EventType.UHID_CREATE2,
             self._name,
@@ -692,12 +760,14 @@ class AsyncUHIDDevice(_UHIDDeviceBase):
         )
 
     async def destroy(self) -> None:
-        self.__logger.info(f'(UHID_DESTROY) destroy {self}')
+        self.__logger.info(f"(UHID_DESTROY) destroy {self}")
         await self._uhid.send_event(_EventType.UHID_DESTROY)
 
     async def send_input(self, data: Sequence[int]) -> None:
         if self.__logger.level <= logging.INFO:
-            self.__logger.info('(UHID_INPUT2) send {}'.format(
-                ''.join([f'{byte:02x}' for byte in data])
-            ))
+            self.__logger.info(
+                "(UHID_INPUT2) send {}".format(
+                    "".join([f"{byte:02x}" for byte in data])
+                )
+            )
         await self._uhid.send_event(_EventType.UHID_INPUT2, data)

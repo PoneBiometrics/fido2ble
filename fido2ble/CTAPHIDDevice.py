@@ -107,7 +107,7 @@ class CTAPHIDDevice:
         self.reference_count -= 1
 
     def process_process_hid_message(
-            self, buffer: list[int], report_type: uhid._ReportType
+        self, buffer: list[int], report_type: uhid._ReportType
     ) -> None:
         # output_report = buffer[0]
         received_data = bytes(buffer[1:])
@@ -116,14 +116,20 @@ class CTAPHIDDevice:
         cmd_or_seq = cmd_or_seq & 0x7F
         try:
             if channel == CTAPHID_BROADCAST_CHANNEL and cmd_or_seq == CTAPHID_CMD.INIT:
-                self.active_tasks.append(asyncio.create_task(self.handle_init(channel, received_data[7: 7 + 8])))
+                self.active_tasks.append(
+                    asyncio.create_task(
+                        self.handle_init(channel, received_data[7 : 7 + 8])
+                    )
+                )
             else:
                 self.handle_hid_message(channel, received_data[4:])
         except BaseException as error:
             logging.warning(f"Error: {error}")
 
     async def handle_init(self, channel, buffer: bytes):
-        logging.debug(f"hid init: channel={'%X' % channel} buffer={buffer} device={self.device}")
+        logging.debug(
+            f"hid init: channel={'%X' % channel} buffer={buffer} device={self.device}"
+        )
         # Block if there is an active channel???
         if channel == CTAPHID_BROADCAST_CHANNEL and len(buffer) == 8:
             # https://fidoalliance.org/specs/fido-v2.1-rd-20210309/fido-client-to-authenticator-protocol-v2.1-rd-20210309.html#usb-channels
@@ -132,11 +138,15 @@ class CTAPHIDDevice:
             try:
                 await self.ble_device.connect(self.handle_ble_message)
             except asyncio.CancelledError as cancelError:
-                logging.warning(f"Unable to connect to {self.ble_device.device_id}, cancelled: {cancelError}")
+                logging.warning(
+                    f"Unable to connect to {self.ble_device.device_id}, cancelled: {cancelError}"
+                )
                 # Failed to connect, we abort now
                 return
             except DBusError as dbusError:
-                logging.warning(f"Unable to connect to {self.ble_device.device_id}, error: {dbusError}")
+                logging.warning(
+                    f"Unable to connect to {self.ble_device.device_id}, error: {dbusError}"
+                )
                 # Failed to connect, we abort now
                 return
             self.channel = new_channel
@@ -155,11 +165,15 @@ class CTAPHIDDevice:
             try:
                 await self.ble_device.connect(self.handle_ble_message)
             except asyncio.CancelledError as cancelError:
-                logging.warning(f"Unable to connect to {self.ble_device.device_id}, cancelled: {cancelError}")
+                logging.warning(
+                    f"Unable to connect to {self.ble_device.device_id}, cancelled: {cancelError}"
+                )
                 # Failed to connect, we abort now
                 return
             except DBusError as dbusError:
-                logging.warning(f"Unable to connect to {self.ble_device.device_id}, error: {dbusError}")
+                logging.warning(
+                    f"Unable to connect to {self.ble_device.device_id}, error: {dbusError}"
+                )
                 # Failed to connect, we abort now
                 return
             self.active_channel = channel
@@ -176,13 +190,16 @@ class CTAPHIDDevice:
                 0,  # device version major, TODO get from devie
                 1,  # device version minor, TODO get from device
                 1,  # device version build/point, TODO get from device
-                CTAPHID_CAPABILITIES.CAPABILITY_CBOR | CTAPHID_CAPABILITIES.CAPABILITY_NMSG,  # these are the same for all BLE FIDO2 devices
+                CTAPHID_CAPABILITIES.CAPABILITY_CBOR
+                | CTAPHID_CAPABILITIES.CAPABILITY_NMSG,  # these are the same for all BLE FIDO2 devices
             ),
-            channel=channel
+            channel=channel,
         )
         pass
 
-    async def send_hid_message(self, command: CTAPHID_CMD, payload: bytes, channel: int = None):
+    async def send_hid_message(
+        self, command: CTAPHID_CMD, payload: bytes, channel: int = None
+    ):
         logging.debug(f"hid tx: command={command.name} payload={payload.hex()}")
         if channel is None:
             channel = self.channel
@@ -195,7 +212,7 @@ class CTAPHIDDevice:
             else:
                 capacity = self.hid_packet_size - 5
                 response = struct.pack(">IB", channel, seq - 1)
-            response += payload[offset_start: (offset_start + capacity)]
+            response += payload[offset_start : (offset_start + capacity)]
 
             response += b"\0" * (self.hid_packet_size - len(response))
 
@@ -213,10 +230,12 @@ class CTAPHIDDevice:
             self.hid_command = CTAPHID_CMD(cmd_or_seq)
             (self.hid_total_length,) = struct.unpack(">H", payload_without_channel[1:3])
             self.hid_seq = -1
-            self.hid_buffer = payload_without_channel[3: 3 + self.hid_total_length]
+            self.hid_buffer = payload_without_channel[3 : 3 + self.hid_total_length]
         else:
             if cmd_or_seq != self.hid_seq + 1:
-                logging.error(f"Sequence out of order, expected {self.hid_seq + 1} got {cmd_or_seq}, payload={payload_without_channel.hex()}")
+                logging.error(
+                    f"Sequence out of order, expected {self.hid_seq + 1} got {cmd_or_seq}, payload={payload_without_channel.hex()}"
+                )
                 # there be dragons: CTAP_STATUS.CTAP1_ERR_INVALID_SEQ
                 return
             payload = payload_without_channel[1:]
@@ -224,7 +243,11 @@ class CTAPHIDDevice:
             self.hid_buffer += payload[:remaining]
             self.hid_seq = cmd_or_seq
         if self.hid_total_length == len(self.hid_buffer):
-            self.active_tasks.append(asyncio.create_task(self.hid_finish_receiving(channel), name="hid_finish_receiving"))
+            self.active_tasks.append(
+                asyncio.create_task(
+                    self.hid_finish_receiving(channel), name="hid_finish_receiving"
+                )
+            )
 
     async def hid_finish_receiving(self, channel):
         try:
@@ -241,19 +264,32 @@ class CTAPHIDDevice:
             self.setup_timeout()
 
             if self.hid_command == CTAPHID_CMD.CBOR:
-                await connected_ble_device.send_ble_message(CTAPBLE_CMD.MSG, self.hid_buffer)
+                await connected_ble_device.send_ble_message(
+                    CTAPBLE_CMD.MSG, self.hid_buffer
+                )
             elif self.hid_command == CTAPHID_CMD.CANCEL:
-                await connected_ble_device.send_ble_message(CTAPBLE_CMD.CANCEL, self.hid_buffer)
+                await connected_ble_device.send_ble_message(
+                    CTAPBLE_CMD.CANCEL, self.hid_buffer
+                )
                 for task in self.active_tasks:
                     if not task.done():
                         task.cancel()
                 self.active_tasks = []
             elif self.hid_command == CTAPHID_CMD.ERROR:
                 # this should not happen, as the error is sent from the fido2 device via BLE, not from the relying party.
-                await connected_ble_device.send_ble_message(CTAPBLE_CMD.ERROR, self.hid_buffer)
+                await connected_ble_device.send_ble_message(
+                    CTAPBLE_CMD.ERROR, self.hid_buffer
+                )
             elif self.hid_command == CTAPHID_CMD.PING:
-                await connected_ble_device.send_ble_message(CTAPBLE_CMD.PING, self.hid_buffer)
-            elif self.hid_command in (CTAPHID_CMD.INIT, CTAPHID_CMD.WINK, CTAPHID_CMD.MSG, CTAPHID_CMD.LOCK):
+                await connected_ble_device.send_ble_message(
+                    CTAPBLE_CMD.PING, self.hid_buffer
+                )
+            elif self.hid_command in (
+                CTAPHID_CMD.INIT,
+                CTAPHID_CMD.WINK,
+                CTAPHID_CMD.MSG,
+                CTAPHID_CMD.LOCK,
+            ):
                 # TODO
                 pass
         except Exception as error:
@@ -267,7 +303,7 @@ class CTAPHIDDevice:
         if not continuation:
             self.ble_command = CTAPBLE_CMD(cmd_or_seq)
             (self.ble_total_length,) = struct.unpack(">H", payload[1:3])
-            self.ble_buffer = payload[3: 3 + self.ble_total_length]
+            self.ble_buffer = payload[3 : 3 + self.ble_total_length]
             self.ble_seq = -1
         else:
             payload = payload[1:]
@@ -282,7 +318,9 @@ class CTAPHIDDevice:
             self.active_tasks.append(asyncio.create_task(self.ble_finish_receiving()))
 
     async def ble_finish_receiving(self):
-        logging.debug(f"ble rx: command={self.ble_command.name} payload={self.ble_buffer.hex()} device={self.ble_device.device_id}")
+        logging.debug(
+            f"ble rx: command={self.ble_command.name} payload={self.ble_buffer.hex()} device={self.ble_device.device_id}"
+        )
         self.ble_device.keep_alive()
         if self.ble_command == CTAPBLE_CMD.MSG:
             await self.send_hid_message(CTAPHID_CMD.CBOR, self.ble_buffer)
@@ -312,7 +350,11 @@ class CTAPHIDDevice:
         while i < len(self.active_tasks):
             task = self.active_tasks[i]
             logging.debug(f"Task {task} is {task.done()}")
-            if isinstance(task, asyncio.Task) and "hid_finish_receiving" in task.get_name() and not task.done():
+            if (
+                isinstance(task, asyncio.Task)
+                and "hid_finish_receiving" in task.get_name()
+                and not task.done()
+            ):
                 i += 1  # Only increment if we didn't remove an element
             else:
                 try:
