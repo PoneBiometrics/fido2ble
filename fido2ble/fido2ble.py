@@ -20,26 +20,31 @@ DEVICE_INTERFACE = "org.bluez.Device1"
 PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 
 fido_devices: dict[str, CTAPBLEDevice]
-hid_devices:  dict[str, CTAPHIDDevice]
+hid_devices: dict[str, CTAPHIDDevice]
+
 
 async def properties_changed(interface, changed, invalidated):
     """Handles property changes for Bluetooth devices."""
     if interface == DEVICE_INTERFACE and "Paired" in changed:
         await update_fido_devices()
 
+
 async def interfaces_added(path, interfaces, bus):
     """Handles new interfaces (e.g., new Bluetooth devices)."""
     if DEVICE_INTERFACE in interfaces:
         device1_interface = interfaces[DEVICE_INTERFACE]
 
-        if 'UUIDs' in device1_interface:
-            for uuid in device1_interface['UUIDs'].value:
+        if "UUIDs" in device1_interface:
+            for uuid in device1_interface["UUIDs"].value:
                 if uuid == FIDO_SERVICE_UUID:
                     logging.info(f"Found new FIDO device: {path}")
                     # Get the specific device object
-                    obj = bus.get_proxy_object('org.bluez', path, await bus.introspect('org.bluez', path))
+                    obj = bus.get_proxy_object(
+                        "org.bluez", path, await bus.introspect("org.bluez", path)
+                    )
                     props = obj.get_interface(PROPERTIES_INTERFACE)
                     props.on_properties_changed(properties_changed)
+
 
 async def interfaces_removed(path, interfaces):
     """Handles removed interfaces (e.g., Bluetooth device lost/disconnected)."""
@@ -56,26 +61,30 @@ async def monitor_bluez():
     """Connects to BlueZ and listens for device events."""
 
     bus: MessageBus = await MessageBus(bus_type=BusType.SYSTEM).connect()
-    bluez_introspect = await bus.introspect(
-        "org.bluez", '/'
-    )
+    bluez_introspect = await bus.introspect("org.bluez", "/")
 
-    dbus_proxy = bus.get_proxy_object('org.bluez', '/', bluez_introspect)
+    dbus_proxy = bus.get_proxy_object("org.bluez", "/", bluez_introspect)
     manager = dbus_proxy.get_interface("org.freedesktop.DBus.ObjectManager")
 
     # Connect signal handlers
     # noinspection PyUnresolvedReferences
-    manager.on_interfaces_added(lambda path, interfaces: asyncio.create_task(
-        interfaces_added(path, interfaces, bus)))
+    manager.on_interfaces_added(
+        lambda path, interfaces: asyncio.create_task(
+            interfaces_added(path, interfaces, bus)
+        )
+    )
     # noinspection PyUnresolvedReferences
     manager.on_interfaces_removed(interfaces_removed)
 
+
 async def create_device(device_path, dbus_managed_objects, bus) -> CTAPBLEDevice:
-    device_proxy = bus.get_proxy_object('org.bluez', device_path, await bus.introspect('org.bluez', device_path))
-    device1 = device_proxy.get_interface('org.bluez.Device1')
+    device_proxy = bus.get_proxy_object(
+        "org.bluez", device_path, await bus.introspect("org.bluez", device_path)
+    )
+    device1 = device_proxy.get_interface("org.bluez.Device1")
     cached = False
     for key in dbus_managed_objects:
-        if key.startswith(device_path + '/'):
+        if key.startswith(device_path + "/"):
             cached = True
             break
 
@@ -90,34 +99,56 @@ async def create_device(device_path, dbus_managed_objects, bus) -> CTAPBLEDevice
     control_point_path = characteristic_paths[FIDO_CONTROL_POINT_UUID]
     control_point_length_path = characteristic_paths[FIDO_CONTROL_POINT_LENGTH_UUID]
     status_path = characteristic_paths[FIDO_STATUS_UUID]
-    return CTAPBLEDevice(device_proxy, device1, device_path, cached, control_point_path, control_point_length_path, status_path)
+    return CTAPBLEDevice(
+        device_proxy,
+        device1,
+        device_path,
+        cached,
+        control_point_path,
+        control_point_length_path,
+        status_path,
+    )
 
 
 async def find_fido() -> dict[str, CTAPBLEDevice]:
     bus: MessageBus = await MessageBus(bus_type=BusType.SYSTEM).connect()
-    bluez_introspect = await bus.introspect(
-        "org.bluez", '/'
-    )
+    bluez_introspect = await bus.introspect("org.bluez", "/")
 
-    dbus_proxy = bus.get_proxy_object('org.bluez', '/', bluez_introspect)
+    dbus_proxy = bus.get_proxy_object("org.bluez", "/", bluez_introspect)
     # noinspection PyUnresolvedReferences
-    dbus_managed_objects = await dbus_proxy.get_interface("org.freedesktop.DBus.ObjectManager").call_get_managed_objects()
+    dbus_managed_objects = await dbus_proxy.get_interface(
+        "org.freedesktop.DBus.ObjectManager"
+    ).call_get_managed_objects()
     global fido_devices
 
     for device_path in dbus_managed_objects:
         if device_path in fido_devices:
             continue
-        if 'org.bluez.Device1' in dbus_managed_objects[device_path]:
-            if dbus_managed_objects[device_path]['org.bluez.Device1']['Paired'].value:
-                if 'UUIDs' in dbus_managed_objects[device_path]['org.bluez.Device1']:
-                    for uuid in dbus_managed_objects[device_path]['org.bluez.Device1']['UUIDs'].value:
+        if "org.bluez.Device1" in dbus_managed_objects[device_path]:
+            if dbus_managed_objects[device_path]["org.bluez.Device1"]["Paired"].value:
+                if "UUIDs" in dbus_managed_objects[device_path]["org.bluez.Device1"]:
+                    for uuid in dbus_managed_objects[device_path]["org.bluez.Device1"][
+                        "UUIDs"
+                    ].value:
                         if uuid == FIDO_SERVICE_UUID:
                             logging.info(f"Added {device_path} as FIDO device")
-                            fido_devices[device_path] = await create_device(device_path, dbus_managed_objects, bus)
-                elif 'ServiceData' in dbus_managed_objects[device_path]['org.bluez.Device1']:
-                    if FIDO_SERVICE_UUID in dbus_managed_objects[device_path]['org.bluez.Device1']['ServiceData'].value.keys():
+                            fido_devices[device_path] = await create_device(
+                                device_path, dbus_managed_objects, bus
+                            )
+                elif (
+                    "ServiceData"
+                    in dbus_managed_objects[device_path]["org.bluez.Device1"]
+                ):
+                    if (
+                        FIDO_SERVICE_UUID
+                        in dbus_managed_objects[device_path]["org.bluez.Device1"][
+                            "ServiceData"
+                        ].value.keys()
+                    ):
                         logging.info(f"Added {device_path} as FIDO device")
-                        fido_devices[device_path] = await create_device(device_path, dbus_managed_objects, bus)
+                        fido_devices[device_path] = await create_device(
+                            device_path, dbus_managed_objects, bus
+                        )
     return fido_devices
 
 
@@ -130,6 +161,7 @@ async def update_fido_devices():
             asyncio.create_task(hid.start())
             hid_devices[fido_device] = hid
 
+
 async def start_system():
     global fido_devices, hid_devices
     fido_devices = {}
@@ -138,10 +170,23 @@ async def start_system():
     await monitor_bluez()
     await asyncio.Event().wait()
 
+
 def main():
-    parser = argparse.ArgumentParser(prog="fido2ble", description="connect with BLE FIDO2 devices")
-    parser.add_argument('-l', '--log-level', default="warn", help="log level of service, either debug, info, warn or error")
-    parser.add_argument('-u', '--uhid-log-level', default="error", help="log level of uhid device, either debug, info, warn or error")
+    parser = argparse.ArgumentParser(
+        prog="fido2ble", description="connect with BLE FIDO2 devices"
+    )
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        default="warn",
+        help="log level of service, either debug, info, warn or error",
+    )
+    parser.add_argument(
+        "-u",
+        "--uhid-log-level",
+        default="error",
+        help="log level of uhid device, either debug, info, warn or error",
+    )
 
     args = parser.parse_args()
 
@@ -171,11 +216,11 @@ def main():
         print(f"unrecognized loglevel {args.uhid_log_level}")
         exit(1)
     logging.basicConfig(
-        level=loglevel,
-        format="%(asctime)s.%(msecs)03d %(message)s",
-        datefmt='%I:%M:%S')
+        level=loglevel, format="%(asctime)s.%(msecs)03d %(message)s", datefmt="%I:%M:%S"
+    )
     logging.getLogger("UHIDDevice").setLevel(uhid_loglevel)
     asyncio.run(start_system())
+
 
 if __name__ == "__main__":
     main()
