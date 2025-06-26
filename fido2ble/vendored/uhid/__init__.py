@@ -393,10 +393,12 @@ class AsyncioBlockingUHID(_BlockingUHIDBase):
         self._loop.add_reader(self._uhid, self._read)
 
     def _async_writer(self) -> None:
-        self._write(self._write_queue.pop(0))
-        if not self._write_queue:
-            self._loop.remove_writer(self._uhid)
-            self._writer_registered = False
+        try:
+            self._write(self._write_queue.pop(0))
+        finally:
+            if not self._write_queue:
+                self._loop.remove_writer(self._uhid)
+                self._writer_registered = False
 
     def _send_event(self, event: bytes) -> None:
         # TODO: benchmark loop.add_writer vs plain write, I feel plain write should be faster in the UHID fd
