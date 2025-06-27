@@ -395,6 +395,8 @@ class AsyncioBlockingUHID(_BlockingUHIDBase):
     def _async_writer(self) -> None:
         try:
             self._write(self._write_queue.pop(0))
+        except IndexError:
+            self.__logger.info("writer: queue empty")
         finally:
             if not self._write_queue:
                 self._loop.remove_writer(self._uhid)
